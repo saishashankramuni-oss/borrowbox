@@ -20,7 +20,15 @@ public class JwtUtils {
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (Exception e) {
+            keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (keyBytes.length < 32) {
+            keyBytes = java.util.Arrays.copyOf(keyBytes, 32);
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
