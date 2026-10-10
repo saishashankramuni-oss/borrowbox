@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: borrowbox_app
+    restart: always
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
+      - DB_URL=jdbc:mysql://db:3306/${DB_NAME:-borrowbox_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - DB_USERNAME=${DB_USERNAME:-borrowbox_user}
+      - DB_PASSWORD=${DB_PASSWORD:-borrowbox_secure_pass}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET environment variable is required}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
+      - UPLOAD_DIR=/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - borrowbox_uploads:/app/uploads
+
+  db:
+    image: mysql:8.0
+    container_name: borrowbox_db
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secure_pass}
+      MYSQL_DATABASE: ${DB_NAME:-borrowbox_db}
+      MYSQL_USER: ${DB_USERNAME:-borrowbox_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-borrowbox_secure_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - borrowbox_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  borrowbox_mysql_data:
+    driver: local
+  borrowbox_uploads:
+    driver: local

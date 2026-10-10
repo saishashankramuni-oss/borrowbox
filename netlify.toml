@@ -1,0 +1,45 @@
+# ==============================================================================
+# BorrowBox Netlify Configuration
+# Serves Static Frontend and proxies REST API & Uploads to Render Backend
+# ==============================================================================
+
+[build]
+  publish = "frontend"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+# Proxy REST API requests to Render backend
+# Note: Update the target URL to match your Render backend service URL
+[[redirects]]
+  from = "/api/*"
+  to = "https://borrowbox-backend.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Proxy uploaded equipment images to backend storage
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://borrowbox-backend.onrender.com/uploads/:splat"
+  status = 200
+  force = true
+
+# Proxy backend health checks
+[[redirects]]
+  from = "/health"
+  to = "https://borrowbox-backend.onrender.com/health"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/actuator/*"
+  to = "https://borrowbox-backend.onrender.com/actuator/:splat"
+  status = 200
+  force = true

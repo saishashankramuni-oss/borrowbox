@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body style="background-color: var(--bg-main);">
+  <header id="app-header"></header>
+
+  <main class="main-content" style="display: flex; align-items: center; justify-content: center; padding: 4rem 1.5rem;">
+    <div class="card" style="max-width: 440px; width: 100%; padding: 2.5rem;">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Welcome Back</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Log in to manage your rentals and equipment listings</p>
+      </div>
+
+      <!-- DEMO ACCOUNTS QUICK PRESET BAR -->
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.6rem;">Quick Demo Accounts:</div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('alex.renter@borrowbox.com')">Renter</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('rahul.owner@borrowbox.com')">Owner</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('admin@borrowbox.com')">Admin</button>
+        </div>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="form-label">Password</label>
+            <a href="#" style="font-size: 0.8rem;" onclick="UI.showToast('Demo Mode: Use Password123!', 'info')">Forgot password?</a>
+          </div>
+          <div style="position: relative;">
+            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">Log In</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-secondary);">
+        Don't have an account? <a href="register.html" style="font-weight: 600;">Sign up for free</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    function fillDemoAccount(email) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = 'Password123!';
+    }
+
+    function togglePasswordVisibility(fieldId) {
+      const input = document.getElementById(fieldId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('login-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+
+      try {
+        const response = await ApiClient.post('/auth/login', { email, password });
+        Auth.saveSession(response.token, response.user);
+        UI.showToast(`Welcome back, ${response.user.fullName}!`, 'success');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || (response.user.role === 'ROLE_ADMIN' ? 'admin-dashboard.html' : 'renter-dashboard.html');
+        
+        setTimeout(() => {
+          window.location.href = redirect;
+        }, 600);
+      } catch (err) {
+        UI.showToast(err.message || 'Invalid email or password', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem;">Platform Administrator Dashboard</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Monitor marketplace volume, user accounts, listings moderation, and disputes</p>
+      </div>
+
+      <!-- OVERVIEW METRICS -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;" id="admin-metrics-grid">
+        <div class="card">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700;">TOTAL USERS</div>
+          <div style="font-size: 2rem; font-weight: 800;" id="m-users">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700;">ACTIVE EQUIPMENT</div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="m-equipment">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700;">ACTIVE BOOKINGS</div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--success);" id="m-bookings">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700;">OPEN DISPUTES</div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--danger);" id="m-disputes">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700;">GROSS VOLUME</div>
+          <div style="font-size: 2rem; font-weight: 800; color: #8B5CF6;" id="m-volume">₹0</div>
+        </div>
+      </div>
+
+      <!-- USER MANAGEMENT TABLE -->
+      <div class="card" style="margin-bottom: 2.5rem; padding: 0; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1.15rem;">User Accounts Management</h3>
+          <span class="badge badge-approved" id="user-count-badge">0 Users</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Account Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-table">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DISPUTES QUEUE -->
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+          <h3 style="font-size: 1.15rem;">Disputes & Claims Queue</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Dispute Ref</th>
+                <th>Booking Ref</th>
+                <th>Raised By</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-disputes-table">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved. Admin Console.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireRole('ROLE_ADMIN')) return;
+      loadAdminOverview();
+      loadUsers();
+      loadDisputes();
+    });
+
+    async function loadAdminOverview() {
+      try {
+        const stats = await ApiClient.get('/admin/overview');
+        document.getElementById('m-users').textContent = stats.totalUsers;
+        document.getElementById('m-equipment').textContent = `${stats.activeEquipment} / ${stats.totalEquipment}`;
+        document.getElementById('m-bookings').textContent = stats.activeBookings;
+        document.getElementById('m-disputes').textContent = stats.openDisputes;
+        document.getElementById('m-volume').textContent = UI.formatCurrency(stats.totalGrossVolume);
+      } catch (e) {}
+    }
+
+    async function loadUsers() {
+      const tbody = document.getElementById('admin-users-table');
+      try {
+        const users = await ApiClient.get('/admin/users');
+        document.getElementById('user-count-badge').textContent = `${users.length} Users`;
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>#${u.id}</td>
+            <td><strong>${u.fullName}</strong></td>
+            <td>${u.email}</td>
+            <td><span class="badge ${u.role === 'ROLE_ADMIN' ? 'badge-completed' : (u.role === 'ROLE_OWNER' ? 'badge-active' : 'badge-approved')}">${u.role.replace('ROLE_', '')}</span></td>
+            <td><span class="badge ${u.accountStatus === 'ACTIVE' ? 'badge-active' : 'badge-rejected'}">${u.accountStatus}</span></td>
+            <td>
+              ${u.role !== 'ROLE_ADMIN' ? `
+                <button class="btn ${u.accountStatus === 'ACTIVE' ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleUserStatus(${u.id}, '${u.accountStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'}')">
+                  ${u.accountStatus === 'ACTIVE' ? 'Suspend' : 'Activate'}
+                </button>
+              ` : '<span style="font-size: 0.8rem; color: var(--text-tertiary);">Admin</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function toggleUserStatus(userId, newStatus) {
+      try {
+        await ApiClient.patch(`/admin/users/${userId}/status`, { status: newStatus });
+        UI.showToast(`User status updated to ${newStatus}`, 'success');
+        loadUsers();
+        loadAdminOverview();
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to update user status', 'error');
+      }
+    }
+
+    async function loadDisputes() {
+      const tbody = document.getElementById('admin-disputes-table');
+      try {
+        const disputes = await ApiClient.get('/admin/disputes');
+        if (!disputes || disputes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No disputes or claims reported.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = disputes.map(d => `
+          <tr>
+            <td>#DISP-${d.id}</td>
+            <td><a href="booking-details.html?id=${d.booking.id}"><strong>${d.booking.bookingReference}</strong></a></td>
+            <td>${d.raisedBy.fullName}</td>
+            <td>${d.reason}</td>
+            <td>${UI.renderStatusBadge(d.status)}</td>
+            <td>
+              ${d.status === 'OPEN' ? `
+                <button class="btn btn-primary btn-sm" onclick="resolveDispute(${d.id})">Resolve Claim</button>
+              ` : '<span style="font-size: 0.8rem; color: var(--text-secondary);">Resolved</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">Error loading disputes</td></tr>`;
+      }
+    }
+
+    async function resolveDispute(id) {
+      const notes = prompt('Enter resolution notes / decision:');
+      if (!notes) return;
+      try {
+        await ApiClient.patch(`/admin/disputes/${id}`, { status: 'RESOLVED', resolutionNotes: notes });
+        UI.showToast('Dispute marked as resolved', 'success');
+        loadDisputes();
+        loadAdminOverview();
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to resolve dispute', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

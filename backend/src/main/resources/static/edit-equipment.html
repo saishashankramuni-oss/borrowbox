@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Equipment Listing — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 780px;">
+      <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem;">Edit Listing</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Update details, pricing, or availability status for your equipment</p>
+      </div>
+
+      <form id="edit-equipment-form" class="card" style="padding: 2.5rem;" onsubmit="handleUpdateEquipment(event)">
+        <div class="form-group">
+          <label class="form-label">Listing Availability Status</label>
+          <select id="status" class="form-control">
+            <option value="AVAILABLE">Available for Rent</option>
+            <option value="PAUSED">Paused (Temporarily Inactive)</option>
+            <option value="MAINTENANCE">In Maintenance</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Equipment Name / Title *</label>
+          <input type="text" id="name" class="form-control" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="categoryId" class="form-control" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Condition *</label>
+            <select id="itemCondition" class="form-control" required>
+              <option value="NEW">New</option>
+              <option value="LIKE_NEW">Like New</option>
+              <option value="EXCELLENT">Excellent</option>
+              <option value="GOOD">Good</option>
+              <option value="FAIR">Fair</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" id="brand" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <input type="text" id="model" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          <textarea id="description" class="form-control" rows="4" required></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Daily Rental Rate (₹) *</label>
+            <input type="number" id="dailyPrice" class="form-control" min="1" step="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Refundable Deposit (₹)</label>
+            <input type="number" id="securityDeposit" class="form-control" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Minimum Rental (Days)</label>
+            <input type="number" id="minimumRentalDays" class="form-control" min="1">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Maximum Rental (Days)</label>
+            <input type="number" id="maximumRentalDays" class="form-control" min="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pickup Location *</label>
+          <input type="text" id="location" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Handling & Pickup Instructions</label>
+          <textarea id="rentalInstructions" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rental Terms</label>
+          <textarea id="rentalTerms" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+          <button type="submit" id="save-listing-btn" class="btn btn-primary btn-lg" style="flex: 1;">Save Changes</button>
+          <a href="owner-dashboard.html" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    let equipmentId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth()) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      equipmentId = urlParams.get('id');
+      if (!equipmentId) {
+        window.location.href = 'owner-dashboard.html';
+        return;
+      }
+
+      await loadCategories();
+      await loadListingData(equipmentId);
+    });
+
+    async function loadCategories() {
+      try {
+        const categories = await ApiClient.get('/categories');
+        const select = document.getElementById('categoryId');
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          select.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    async function loadListingData(id) {
+      try {
+        const eq = await ApiClient.get(`/equipment/${id}`);
+        
+        document.getElementById('name').value = eq.name;
+        document.getElementById('categoryId').value = eq.category ? eq.category.id : '';
+        document.getElementById('itemCondition').value = eq.itemCondition;
+        document.getElementById('brand').value = eq.brand || '';
+        document.getElementById('model').value = eq.model || '';
+        document.getElementById('description').value = eq.description;
+        document.getElementById('dailyPrice').value = eq.dailyPrice;
+        document.getElementById('securityDeposit').value = eq.securityDeposit;
+        document.getElementById('minimumRentalDays').value = eq.minimumRentalDays;
+        document.getElementById('maximumRentalDays').value = eq.maximumRentalDays;
+        document.getElementById('location').value = eq.location;
+        document.getElementById('rentalInstructions').value = eq.rentalInstructions || '';
+        document.getElementById('rentalTerms').value = eq.rentalTerms || '';
+        document.getElementById('status').value = eq.status;
+
+      } catch (e) {
+        UI.showToast('Failed to load listing: ' + e.message, 'error');
+      }
+    }
+
+    async function handleUpdateEquipment(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('save-listing-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        categoryId: parseInt(document.getElementById('categoryId').value),
+        itemCondition: document.getElementById('itemCondition').value,
+        brand: document.getElementById('brand').value.trim(),
+        model: document.getElementById('model').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        dailyPrice: parseFloat(document.getElementById('dailyPrice').value),
+        securityDeposit: parseFloat(document.getElementById('securityDeposit').value) || 0,
+        minimumRentalDays: parseInt(document.getElementById('minimumRentalDays').value) || 1,
+        maximumRentalDays: parseInt(document.getElementById('maximumRentalDays').value) || 30,
+        location: document.getElementById('location').value.trim(),
+        rentalInstructions: document.getElementById('rentalInstructions').value.trim(),
+        rentalTerms: document.getElementById('rentalTerms').value.trim(),
+        status: document.getElementById('status').value
+      };
+
+      try {
+        await ApiClient.put(`/equipment/${equipmentId}`, payload);
+        UI.showToast('Listing updated successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = 'owner-dashboard.html';
+        }, 800);
+      } catch (err) {
+        UI.showToast(err.message || 'Failed to update listing', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+      }
+    }
+  </script>
+</body>
+</html>

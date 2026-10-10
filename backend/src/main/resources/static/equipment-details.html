@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Details — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" id="details-container">
+      <div style="text-align: center; padding: 4rem;"><div class="spinner"></div><p style="color: var(--text-secondary); margin-top: 1rem;">Loading equipment details...</p></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    let currentEquipment = null;
+    let selectedStartDate = null;
+    let selectedEndDate = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      if (!id) {
+        window.location.href = 'explore.html';
+        return;
+      }
+      loadEquipmentDetails(id);
+    });
+
+    async function loadEquipmentDetails(id) {
+      const container = document.getElementById('details-container');
+      try {
+        currentEquipment = await ApiClient.get(`/equipment/${id}`);
+        const reviews = await ApiClient.get(`/reviews/equipment/${id}`).catch(() => []);
+        
+        document.title = `${currentEquipment.name} — BorrowBox`;
+
+        const rawImages = currentEquipment.images && currentEquipment.images.length > 0 
+          ? currentEquipment.images 
+          : [{ filePath: currentEquipment.primaryImageUrl, altText: currentEquipment.name }];
+
+        const images = rawImages.map(img => ({
+          ...img,
+          filePath: ApiClient.resolveImageUrl(img.filePath || currentEquipment.primaryImageUrl)
+        }));
+
+        const ratingVal = currentEquipment.ratingAverage ? Number(currentEquipment.ratingAverage).toFixed(1) : 'New';
+
+        container.innerHTML = `
+          <!-- BREADCRUMB -->
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: center;">
+            <a href="index.html">Home</a> &rsaquo; 
+            <a href="explore.html">Explore</a> &rsaquo; 
+            <a href="explore.html?category=${currentEquipment.category ? currentEquipment.category.slug : ''}">${currentEquipment.category ? currentEquipment.category.name : 'Category'}</a> &rsaquo;
+            <span style="color: var(--text-primary); font-weight: 600;">${currentEquipment.name}</span>
+          </div>
+
+          <div class="details-grid">
+            <!-- LEFT COLUMN: GALLERY & DETAILS -->
+            <div>
+              <div class="gallery-main">
+                <img id="main-gallery-img" src="${images[0].filePath}" alt="${currentEquipment.name}" onerror="this.src='https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'">
+              </div>
+
+              ${images.length > 1 ? `
+                <div class="gallery-thumbs">
+                  ${images.map((img, idx) => `
+                    <div class="gallery-thumb ${idx === 0 ? 'active' : ''}" onclick="switchGalleryImage('${img.filePath}', this)">
+                      <img src="${img.filePath}" alt="Thumbnail ${idx + 1}">
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+
+              <!-- TITLE & RATING HEADER -->
+              <div style="margin-top: 2rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">
+                  <span class="badge badge-approved" style="font-size: 0.8rem;">${currentEquipment.itemCondition} Condition</span>
+                  <div class="rating-badge" style="font-size: 1rem;">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>${ratingVal}</span>
+                    <span style="color: var(--text-secondary); font-weight: 400;">(${currentEquipment.reviewCount || 0} reviews)</span>
+                  </div>
+                </div>
+
+                <h1 style="font-size: 2.2rem; margin-bottom: 0.75rem;">${currentEquipment.name}</h1>
+
+                <div style="display: flex; align-items: center; gap: 1.5rem; color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.75rem;">
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <span>${currentEquipment.location}</span>
+                  </div>
+                  <div>Brand: <strong style="color: var(--text-primary);">${currentEquipment.brand || 'N/A'}</strong></div>
+                  <div>Model: <strong style="color: var(--text-primary);">${currentEquipment.model || 'N/A'}</strong></div>
+                </div>
+              </div>
+
+              <!-- DESCRIPTION -->
+              <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">Description</h3>
+                <p style="color: var(--text-secondary); line-height: 1.7; whitespace: pre-line;">${currentEquipment.description}</p>
+              </div>
+
+              <!-- OWNER CARD & POLICIES -->
+              <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">Listed by Equipment Owner</h3>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                  <img src="${currentEquipment.owner.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'}" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover;" alt="${currentEquipment.owner.fullName}">
+                  <div>
+                    <h4 style="font-size: 1.05rem;">${currentEquipment.owner.fullName}</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Verified BorrowBox Owner</p>
+                  </div>
+                </div>
+
+                ${currentEquipment.rentalInstructions ? `
+                  <div style="background: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">Handling Instructions:</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">${currentEquipment.rentalInstructions}</p>
+                  </div>
+                ` : ''}
+
+                ${currentEquipment.rentalTerms ? `
+                  <div style="background: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
+                    <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">Owner Terms:</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">${currentEquipment.rentalTerms}</p>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- REVIEWS SECTION -->
+              <div class="card">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Verified Renter Reviews (${reviews.length})</h3>
+                ${reviews.length === 0 ? `
+                  <p style="color: var(--text-secondary); font-size: 0.95rem;">No reviews yet for this equipment.</p>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    ${reviews.map(r => `
+                      <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+                          <div style="font-weight: 700; font-size: 0.95rem;">${r.renter ? r.renter.fullName : 'Verified Renter'}</div>
+                          <div class="rating-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            <span>${r.rating} / 5</span>
+                          </div>
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.35rem;">${r.comment || 'No written comment.'}</p>
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary);">${UI.formatDate(r.createdAt)}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: RENTAL BOOKING WIDGET -->
+            <div>
+              <div class="booking-widget-card">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem;">
+                  <div>
+                    <span style="font-family: 'Plus Jakarta Sans'; font-size: 2rem; font-weight: 800; color: var(--primary);">${UI.formatCurrency(currentEquipment.dailyPrice)}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;"> / day</span>
+                  </div>
+                  <span class="badge badge-available">${currentEquipment.status}</span>
+                </div>
+
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                  Min rental: <strong>${currentEquipment.minimumRentalDays} days</strong> &bull; Max rental: <strong>${currentEquipment.maximumRentalDays} days</strong>
+                </div>
+
+                <form id="booking-form" onsubmit="handleCreateBooking(event)">
+                  <div class="form-group">
+                    <label class="form-label">Rental Start Date</label>
+                    <input type="date" id="booking-start-date" class="form-control" required onchange="calculateBookingEstimate()">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Rental End Date</label>
+                    <input type="date" id="booking-end-date" class="form-control" required onchange="calculateBookingEstimate()">
+                  </div>
+
+                  <!-- PRICE ESTIMATE CONTAINER -->
+                  <div id="price-estimate-box" class="price-breakdown">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center;">Select start & end dates to calculate price breakdown</p>
+                  </div>
+
+                  <button type="submit" id="book-now-btn" class="btn btn-primary btn-lg" style="width: 100%;" disabled>
+                    Request Booking
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Set min date for date inputs to today
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('booking-start-date').min = todayStr;
+        document.getElementById('booking-end-date').min = todayStr;
+
+      } catch (e) {
+        container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 4rem;">Error loading equipment details: ${e.message}</div>`;
+      }
+    }
+
+    function switchGalleryImage(url, thumbEl) {
+      document.getElementById('main-gallery-img').src = url;
+      document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+      thumbEl.classList.add('active');
+    }
+
+    async function calculateBookingEstimate() {
+      const start = document.getElementById('booking-start-date').value;
+      const end = document.getElementById('booking-end-date').value;
+      const box = document.getElementById('price-estimate-box');
+      const btn = document.getElementById('book-now-btn');
+
+      if (!start || !end) {
+        btn.disabled = true;
+        return;
+      }
+
+      try {
+        const est = await ApiClient.get(`/bookings/estimate?equipmentId=${currentEquipment.id}&startDate=${start}&endDate=${end}`);
+        
+        box.innerHTML = `
+          <div class="price-row">
+            <span>Rental (${est.rentalDays} days &times; ${UI.formatCurrency(est.dailyPrice)})</span>
+            <span>${UI.formatCurrency(est.rentalSubtotal)}</span>
+          </div>
+          <div class="price-row">
+            <span>BorrowBox Service Fee (2%)</span>
+            <span>${UI.formatCurrency(est.additionalFees)}</span>
+          </div>
+          <div class="price-row">
+            <span>Refundable Deposit</span>
+            <span>${UI.formatCurrency(est.depositAmount)}</span>
+          </div>
+          <div class="price-row total">
+            <span>Total Amount Due</span>
+            <span>${UI.formatCurrency(est.totalAmount)}</span>
+          </div>
+          <div style="font-size: 0.8rem; color: ${est.available ? 'var(--success)' : 'var(--danger)'}; margin-top: 0.5rem; font-weight: 600; text-align: center;">
+            ${est.availabilityMessage}
+          </div>
+        `;
+
+        btn.disabled = !est.available;
+      } catch (e) {
+        box.innerHTML = `<div style="color: var(--danger); font-size: 0.85rem; text-align: center;">${e.message}</div>`;
+        btn.disabled = true;
+      }
+    }
+
+    async function handleCreateBooking(e) {
+      e.preventDefault();
+      if (!Auth.requireAuth()) return;
+
+      const user = Auth.getUser();
+      if (user.id === currentEquipment.owner.id) {
+        UI.showToast('You cannot book your own equipment listing!', 'warning');
+        return;
+      }
+
+      const start = document.getElementById('booking-start-date').value;
+      const end = document.getElementById('booking-end-date').value;
+
+      try {
+        const booking = await ApiClient.post('/bookings', {
+          equipmentId: currentEquipment.id,
+          startDate: start,
+          endDate: end
+        });
+
+        UI.showToast('Booking request created successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = `booking-details.html?id=${booking.id}`;
+        }, 800);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to submit booking request', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

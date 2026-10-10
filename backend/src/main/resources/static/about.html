@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About BorrowBox — Rent Smart. Own Less.</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 860px;">
+      <!-- ABOUT HERO -->
+      <div style="text-align: center; margin-bottom: 4rem;">
+        <span class="hero-badge">About BorrowBox</span>
+        <h1 style="font-size: 2.8rem; margin: 1rem 0 1.25rem;">Empowering creators and businesses to rent gear seamlessly.</h1>
+        <p style="color: var(--text-secondary); font-size: 1.15rem; line-height: 1.7; max-width: 700px; margin: 0 auto;">
+          BorrowBox connects equipment owners with creators, videographers, photographers, event planners, and DIY enthusiasts who need high-grade gear for short-term use.
+        </p>
+      </div>
+
+      <!-- FAQ SECTION -->
+      <div id="faq" style="margin-bottom: 4rem;">
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center;">Frequently Asked Questions</h2>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">How does double-booking prevention work on BorrowBox?</h3>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Our backend pricing and availability engine uses strict database pessimistic concurrency locking. Whenever a booking request is made for dates inclusive of existing confirmed or active bookings, the server automatically rejects overlapping date requests.</p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">How are security deposits handled?</h3>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Security deposits are held separately from rental earnings. Once the equipment is returned in damage-free condition and verified by the owner, the deposit is automatically refunded.</p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">What are rental condition reports?</h3>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">Both owner and renter can log condition inspection reports before handover and after return. Notes and photo proof are saved side-by-side to guarantee transparency and eliminate damage disputes.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- POLICIES SECTION -->
+      <div id="terms" class="card" style="padding: 2.5rem; margin-bottom: 4rem;">
+        <h2 style="font-size: 1.6rem; margin-bottom: 1rem;">Platform Policies & Terms</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+          BorrowBox is an online marketplace connecting equipment owners and renters. All transactions are backed by identity verification, deposit protection, and inspection reports.
+        </p>
+        <div style="font-size: 0.85rem; color: var(--text-tertiary);">Note: This application is a university project demonstration. All listed accounts and mock payment records are for sample presentation.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+</body>
+</html>

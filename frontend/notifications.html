@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 760px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+          <h1 style="font-size: 2.2rem;">Notifications</h1>
+          <p style="color: var(--text-secondary); margin-top: 0.25rem;">Updates on your booking requests, approvals, and rental deadlines</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="markAllNotificationsRead()">Mark All as Read</button>
+      </div>
+
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div id="notifications-list">
+          <!-- Loaded via JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      loadNotifications();
+    });
+
+    async function loadNotifications() {
+      const container = document.getElementById('notifications-list');
+      container.innerHTML = '<div style="text-align: center; padding: 3rem;"><div class="spinner"></div></div>';
+
+      try {
+        const notifications = await ApiClient.get('/notifications');
+        if (!notifications || notifications.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No notifications yet.</div>';
+          return;
+        }
+
+        container.innerHTML = notifications.map(n => `
+          <div style="padding: 1.25rem; border-bottom: 1px solid var(--border-color); background: ${n.isRead ? 'var(--bg-surface)' : 'var(--primary-light)'}; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem;">${n.title}</div>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${n.message}</p>
+              <div style="font-size: 0.78rem; color: var(--text-tertiary);">${UI.formatDate(n.createdAt)}</div>
+            </div>
+            ${n.relatedBookingId ? `
+              <a href="booking-details.html?id=${n.relatedBookingId}" class="btn btn-secondary btn-sm" onclick="markSingleRead(${n.id})">View Booking</a>
+            ` : ''}
+          </div>
+        `).join('');
+
+      } catch (e) {
+        container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 3rem;">Error: ${e.message}</div>`;
+      }
+    }
+
+    async function markSingleRead(id) {
+      try {
+        await ApiClient.patch(`/notifications/${id}/read`);
+      } catch (e) {}
+    }
+
+    async function markAllNotificationsRead() {
+      try {
+        await ApiClient.post('/notifications/read-all');
+        UI.showToast('All notifications marked as read', 'success');
+        loadNotifications();
+        renderNavbar();
+      } catch (e) {
+        UI.showToast('Failed to update notifications', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

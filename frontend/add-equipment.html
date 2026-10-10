@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List New Equipment — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 780px;">
+      <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem;">List Equipment for Rent</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Fill in your equipment details to start earning passive rental income</p>
+      </div>
+
+      <form id="add-equipment-form" class="card" style="padding: 2.5rem;" onsubmit="handleAddEquipment(event)">
+        <!-- Section 1: Basic Information -->
+        <h3 style="font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">1. Basic Equipment Information</h3>
+
+        <div class="form-group">
+          <label class="form-label">Equipment Name / Title *</label>
+          <input type="text" id="name" class="form-control" placeholder="e.g. Sony Alpha A7 IV Mirrorless Camera" required minlength="3">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="categoryId" class="form-control" required>
+              <option value="">Select Category</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Condition *</label>
+            <select id="itemCondition" class="form-control" required>
+              <option value="NEW">New</option>
+              <option value="LIKE_NEW">Like New</option>
+              <option value="EXCELLENT" selected>Excellent</option>
+              <option value="GOOD">Good</option>
+              <option value="FAIR">Fair</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" id="brand" class="form-control" placeholder="e.g. Sony, Canon, Apple, DJI">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <input type="text" id="model" class="form-control" placeholder="e.g. A7 IV, MacBook Pro M3">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          <textarea id="description" class="form-control" rows="4" placeholder="Describe key features, included accessories, batteries, lenses, or case details..." required></textarea>
+        </div>
+
+        <!-- Section 2: Rental Rates & Terms -->
+        <h3 style="font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin: 2rem 0 1.5rem;">2. Pricing & Rental Durations</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Daily Rental Rate (₹) *</label>
+            <input type="number" id="dailyPrice" class="form-control" placeholder="e.g. 2500" min="1" step="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Refundable Deposit (₹)</label>
+            <input type="number" id="securityDeposit" class="form-control" placeholder="e.g. 5000" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label class="form-label">Minimum Rental (Days)</label>
+            <input type="number" id="minimumRentalDays" class="form-control" value="1" min="1">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Maximum Rental (Days)</label>
+            <input type="number" id="maximumRentalDays" class="form-control" value="30" min="1">
+          </div>
+        </div>
+
+        <!-- Section 3: Location & Guidelines -->
+        <h3 style="font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin: 2rem 0 1.5rem;">3. Location & Guidelines</h3>
+
+        <div class="form-group">
+          <label class="form-label">Pickup & Return Location *</label>
+          <input type="text" id="location" class="form-control" placeholder="e.g. Indiranagar, Bengaluru" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Handling & Pickup Instructions</label>
+          <textarea id="rentalInstructions" class="form-control" rows="2" placeholder="e.g. Handle with care. Always keep in protective padded case during transit."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rental Terms & Requirements</label>
+          <textarea id="rentalTerms" class="form-control" rows="2" placeholder="e.g. Government ID required at pickup. Deposit refundable upon damage-free return."></textarea>
+        </div>
+
+        <!-- Section 4: Image Upload -->
+        <h3 style="font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin: 2rem 0 1.5rem;">4. Equipment Image Upload</h3>
+
+        <div class="form-group">
+          <label class="form-label">Upload Equipment Photos</label>
+          <input type="file" id="image-file-input" class="form-control" accept="image/*" onchange="handleImageUpload(event)">
+          <div id="image-upload-status" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Upload clear photos of your equipment from multiple angles</div>
+        </div>
+
+        <div id="uploaded-images-preview" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;"></div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+          <button type="submit" id="submit-listing-btn" class="btn btn-primary btn-lg" style="flex: 1;">Publish Equipment Listing</button>
+          <a href="owner-dashboard.html" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    const uploadedImageUrls = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      loadCategories();
+    });
+
+    async function loadCategories() {
+      try {
+        const categories = await ApiClient.get('/categories');
+        const select = document.getElementById('categoryId');
+        categories.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          select.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    async function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('image-upload-status');
+      statusEl.textContent = 'Uploading photo...';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const filePath = await ApiClient.post('/equipment/upload-image', formData);
+        uploadedImageUrls.push(filePath);
+        statusEl.textContent = 'Photo uploaded successfully!';
+        renderUploadedPreviews();
+      } catch (err) {
+        statusEl.textContent = 'Upload failed: ' + err.message;
+        statusEl.style.color = 'var(--danger)';
+      }
+    }
+
+    function renderUploadedPreviews() {
+      const container = document.getElementById('uploaded-images-preview');
+      container.innerHTML = uploadedImageUrls.map((url, idx) => `
+        <div style="position: relative; width: 90px; height: 70px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);">
+          <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+          <button type="button" onclick="removeUploadedImage(${idx})" style="position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removeUploadedImage(idx) {
+      uploadedImageUrls.splice(idx, 1);
+      renderUploadedPreviews();
+    }
+
+    async function handleAddEquipment(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('submit-listing-btn');
+      btn.disabled = true;
+      btn.textContent = 'Publishing Listing...';
+
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        categoryId: parseInt(document.getElementById('categoryId').value),
+        itemCondition: document.getElementById('itemCondition').value,
+        brand: document.getElementById('brand').value.trim(),
+        model: document.getElementById('model').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        dailyPrice: parseFloat(document.getElementById('dailyPrice').value),
+        securityDeposit: parseFloat(document.getElementById('securityDeposit').value) || 0,
+        minimumRentalDays: parseInt(document.getElementById('minimumRentalDays').value) || 1,
+        maximumRentalDays: parseInt(document.getElementById('maximumRentalDays').value) || 30,
+        location: document.getElementById('location').value.trim(),
+        rentalInstructions: document.getElementById('rentalInstructions').value.trim(),
+        rentalTerms: document.getElementById('rentalTerms').value.trim(),
+        imageUrls: uploadedImageUrls
+      };
+
+      try {
+        const created = await ApiClient.post('/equipment', payload);
+        UI.showToast('Equipment listing published successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = `equipment-details.html?id=${created.id}`;
+        }, 800);
+      } catch (err) {
+        UI.showToast(err.message || 'Failed to create listing', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Publish Equipment Listing';
+      }
+    }
+  </script>
+</body>
+</html>

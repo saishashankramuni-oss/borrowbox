@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renter Dashboard — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+          <h1 style="font-size: 2.2rem;">Renter Dashboard</h1>
+          <p style="color: var(--text-secondary); margin-top: 0.25rem;">Manage your active bookings, rental history, and saved wishlist</p>
+        </div>
+        <a href="explore.html" class="btn btn-primary">+ Explore New Gear</a>
+      </div>
+
+      <!-- DASHBOARD TABS -->
+      <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; overflow-x: auto;">
+        <button class="btn btn-secondary btn-sm tab-btn active" onclick="switchTab('all', this)">All Rentals</button>
+        <button class="btn btn-secondary btn-sm tab-btn" onclick="switchTab('ACTIVE', this)">Active Rentals</button>
+        <button class="btn btn-secondary btn-sm tab-btn" onclick="switchTab('PENDING', this)">Pending Requests</button>
+        <button class="btn btn-secondary btn-sm tab-btn" onclick="switchTab('APPROVED', this)">Approved</button>
+        <button class="btn btn-secondary btn-sm tab-btn" onclick="switchTab('COMPLETED', this)">Past Rentals</button>
+        <button class="btn btn-secondary btn-sm tab-btn" onclick="switchTab('CANCELLED', this)">Cancelled</button>
+      </div>
+
+      <!-- TABULAR BOOKING LIST -->
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Equipment</th>
+                <th>Dates & Duration</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rentals-table-body">
+              <!-- Loaded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    let allRentals = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      loadMyRentals();
+    });
+
+    async function loadMyRentals() {
+      const tbody = document.getElementById('rentals-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><div class="spinner"></div></td></tr>';
+
+      try {
+        allRentals = await ApiClient.get('/bookings/my-rentals');
+        renderRentalsTable(allRentals);
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger); padding: 2rem;">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    function renderRentalsTable(rentals) {
+      const tbody = document.getElementById('rentals-table-body');
+      if (!rentals || rentals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-secondary);">No rentals found in this view. <a href="explore.html" style="color: var(--primary); font-weight: 600;">Explore equipment</a> to book your first item!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rentals.map(b => {
+        const primaryImg = b.equipment && b.equipment.primaryImageUrl ? b.equipment.primaryImageUrl : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=200&q=80';
+        
+        let actionBtn = `<a href="booking-details.html?id=${b.id}" class="btn btn-secondary btn-sm">View Details</a>`;
+        
+        if (b.bookingStatus === 'ACTIVE') {
+          actionBtn += ` <button class="btn btn-outline btn-sm" onclick="requestReturn(${b.id})">Return Gear</button>`;
+        } else if (b.bookingStatus === 'COMPLETED') {
+          actionBtn += ` <a href="booking-details.html?id=${b.id}#review" class="btn btn-primary btn-sm">Leave Review</a>`;
+        }
+
+        return `
+          <tr>
+            <td><strong style="font-family: monospace; font-size: 0.95rem;">${b.bookingReference}</strong></td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <img src="${primaryImg}" style="width: 46px; height: 36px; border-radius: var(--radius-sm); object-fit: cover;" alt="${b.equipment.name}">
+                <div>
+                  <div style="font-weight: 700; color: var(--text-primary);">${b.equipment.name}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-secondary);">Owner: ${b.owner.fullName}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div>${UI.formatDate(b.startDate)} &rarr; ${UI.formatDate(b.endDate)}</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${b.rentalDays} days</div>
+            </td>
+            <td><strong>${UI.formatCurrency(b.totalAmount)}</strong></td>
+            <td>${UI.renderStatusBadge(b.bookingStatus)}</td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function switchTab(statusFilter, btnEl) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+      btnEl.classList.add('active');
+
+      if (statusFilter === 'all') {
+        renderRentalsTable(allRentals);
+      } else {
+        const filtered = allRentals.filter(b => b.bookingStatus === statusFilter);
+        renderRentalsTable(filtered);
+      }
+    }
+
+    async function requestReturn(bookingId) {
+      if (!confirm('Are you sure you have completed using this equipment and wish to initiate return to the owner?')) return;
+      try {
+        await ApiClient.post(`/bookings/${bookingId}/request-return`);
+        UI.showToast('Return request submitted to owner!', 'success');
+        loadMyRentals();
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to submit return request', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

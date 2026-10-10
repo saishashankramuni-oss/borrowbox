@@ -1,0 +1,6 @@
+# BorrowBox Netlify Redirect Rules
+# Proxies API and upload traffic to Render backend service
+/api/*  https://borrowbox-backend.onrender.com/api/:splat  200!
+/uploads/*  https://borrowbox-backend.onrender.com/uploads/:splat  200!
+/health  https://borrowbox-backend.onrender.com/health  200!
+/actuator/*  https://borrowbox-backend.onrender.com/actuator/:splat  200!

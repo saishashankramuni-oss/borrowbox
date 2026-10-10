@@ -1,0 +1,39 @@
+# ==============================================================================
+# BorrowBox Render Blueprint Configuration
+# Deploys Spring Boot Backend with Docker & Production Environment Variables
+# ==============================================================================
+
+services:
+  - type: web
+    name: borrowbox-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_URL
+        sync: false # Set to Railway MySQL JDBC URL: jdbc:mysql://<host>:<port>/<dbname>?useSSL=true&requireSSL=false&serverTimezone=UTC
+      - key: DB_USERNAME
+        sync: false # Railway MySQL user (e.g. root)
+      - key: DB_PASSWORD
+        sync: false # Railway MySQL password
+      - key: DB_DRIVER
+        value: com.mysql.cj.jdbc.Driver
+      - key: DB_DIALECT
+        value: org.hibernate.dialect.MySQLDialect
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 86400000
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # Set to your deployed Netlify frontend URL: e.g. https://your-borrowbox.netlify.app
+      - key: UPLOAD_DIR
+        value: /app/uploads
+    disk:
+      name: borrowbox-uploads
+      mountPath: /app/uploads
+      sizeGB: 1

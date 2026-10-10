@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BorrowBox — Rent Smart. Own Less.</title>
+  <meta name="description" content="Discover and rent quality equipment from people and businesses around you. Cameras, laptops, projectors, tools, gaming consoles and more.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <!-- Dynamic Header -->
+  <header id="app-header"></header>
+
+  <main class="main-content" style="padding-top: 0;">
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div>
+          <div class="hero-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>The Premier Equipment Rental Marketplace</span>
+          </div>
+
+          <h1 class="hero-title">
+            The right gear.<br>
+            <span>Right when you need it.</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            Discover and rent quality equipment from verified owners around you. Spend less on ownership and more on what you create.
+          </p>
+
+          <!-- SEARCH BOX -->
+          <form id="hero-search-form" class="hero-search-box" onsubmit="handleHeroSearch(event)">
+            <div class="search-field">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="hero-search-query" placeholder="What gear do you need? (e.g. Sony A7, PS5, Projector)">
+            </div>
+            <div class="search-divider"></div>
+            <div class="search-field" style="max-width: 180px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <input type="text" id="hero-search-location" placeholder="City or area">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Search Gear</button>
+          </form>
+        </div>
+
+        <div class="hero-media-wrap">
+          <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1000&q=80" alt="Professional Camera Gear" class="hero-image">
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORIES SECTION -->
+    <section class="container" style="padding-top: 3.5rem; padding-bottom: 2rem;" id="categories">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-size: 1.75rem;">Browse Popular Categories</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem;">Find verified equipment tailored for your projects</p>
+        </div>
+        <a href="explore.html" class="btn btn-secondary btn-sm">View All Categories &rarr;</a>
+      </div>
+
+      <div class="category-pills" id="category-pills-list">
+        <!-- Loaded via JavaScript -->
+      </div>
+    </section>
+
+    <!-- FEATURED EQUIPMENT -->
+    <section class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem;">
+        <div>
+          <h2 style="font-size: 1.75rem;">Featured Listings</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem;">Hand-picked quality gear available for instant booking</p>
+        </div>
+        <a href="explore.html" class="btn btn-outline">Explore Marketplace &rarr;</a>
+      </div>
+
+      <div class="equipment-grid" id="featured-equipment-grid">
+        <!-- Loaded via JavaScript -->
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section style="background-color: var(--bg-surface); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 5rem 0;" id="how-it-works">
+      <div class="container">
+        <div style="text-align: center; max-width: 640px; margin: 0 auto 3.5rem;">
+          <h2 style="font-size: 2.2rem; margin-bottom: 0.75rem;">How BorrowBox Works</h2>
+          <p style="color: var(--text-secondary); font-size: 1.05rem;">Simple, secure, transparent rental workflow for renters and owners</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem;">
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">1. Discover & Check Dates</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">Search equipment by category, location, or price. Select rental start and end dates with real-time availability check.</p>
+          </div>
+
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">2. Book & Approve</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">Submit your request with transparent pricing and refundable deposit. Owner reviews and approves your booking.</p>
+          </div>
+
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line></line></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">3. Inspect & Handover</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">Record equipment condition with photos before pickup. Enjoy using the gear for your production or event.</p>
+          </div>
+
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">4. Return & Deposit Refund</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">Return equipment to owner. Owner verifies item condition, completes rental, and security deposit is released.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALL TO ACTION BANNER -->
+    <section class="container" style="padding: 5rem 0;">
+      <div style="background: linear-gradient(135deg, #16181D 0%, #2A2F3D 100%); border-radius: var(--radius-xl); padding: 3.5rem; color: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+        <div style="max-width: 540px;">
+          <h2 style="font-size: 2.2rem; color: #ffffff; margin-bottom: 1rem;">Have equipment gathering dust?</h2>
+          <p style="color: #9CA3AF; font-size: 1.05rem; line-height: 1.6;">Turn your cameras, laptops, tools, and electronics into passive income by renting them safely on BorrowBox.</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <a href="add-equipment.html" class="btn btn-primary btn-lg">List Your Equipment</a>
+          <a href="about.html" class="btn btn-secondary btn-lg" style="color: #ffffff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">Learn More</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand-logo" style="color: #ffffff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span>Borrow<span style="color: var(--primary);">Box</span></span>
+        </a>
+        <p>Rent Smart. Own Less. The trusted marketplace for short-term equipment rentals between creators, businesses, and individuals.</p>
+      </div>
+
+      <div>
+        <h4 class="footer-title">Marketplace</h4>
+        <ul class="footer-links">
+          <li><a href="explore.html">Explore All Equipment</a></li>
+          <li><a href="explore.html?category=cameras-lenses">Cameras & Lenses</a></li>
+          <li><a href="explore.html?category=laptops-computers">Laptops & Workstations</a></li>
+          <li><a href="explore.html?category=projectors-screens">Projectors</a></li>
+          <li><a href="add-equipment.html">List Your Gear</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-title">Platform & Support</h4>
+        <ul class="footer-links">
+          <li><a href="about.html">About BorrowBox</a></li>
+          <li><a href="about.html#how-it-works">How It Works</a></li>
+          <li><a href="about.html#faq">Frequently Asked Questions</a></li>
+          <li><a href="contact.html">Contact Support</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-title">Legal & Trust</h4>
+        <ul class="footer-links">
+          <li><a href="about.html#terms">Terms of Service</a></li>
+          <li><a href="about.html#privacy">Privacy Policy</a></li>
+          <li><a href="about.html#cancellation">Rental & Damage Policy</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved. Demo Version.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCategories();
+      loadFeaturedListings();
+    });
+
+    async function loadCategories() {
+      try {
+        const categories = await ApiClient.get('/categories');
+        const container = document.getElementById('category-pills-list');
+        if (!container) return;
+
+        container.innerHTML = categories.map(cat => `
+          <a href="explore.html?category=${cat.slug}" class="category-pill">
+            <span>${cat.name}</span>
+          </a>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadFeaturedListings() {
+      const container = document.getElementById('featured-equipment-grid');
+      if (!container) return;
+
+      try {
+        const page = await ApiClient.get('/equipment?size=8');
+        const listings = page.content || [];
+        if (listings.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; grid-column: 1/-1;">No listings available right now.</p>';
+          return;
+        }
+
+        container.innerHTML = listings.map(eq => UI.renderEquipmentCard(eq)).join('');
+      } catch (e) {
+        container.innerHTML = '<p style="color: var(--danger); text-align: center; grid-column: 1/-1;">Failed to load listings. Please ensure Spring Boot backend is running.</p>';
+      }
+    }
+
+    function handleHeroSearch(e) {
+      e.preventDefault();
+      const query = document.getElementById('hero-search-query').value.trim();
+      const location = document.getElementById('hero-search-location').value.trim();
+      let url = 'explore.html?';
+      if (query) url += `query=${encodeURIComponent(query)}&`;
+      if (location) url += `location=${encodeURIComponent(location)}`;
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>

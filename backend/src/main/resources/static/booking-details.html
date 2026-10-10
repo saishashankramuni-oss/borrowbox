@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Details — BorrowBox</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main class="main-content">
+    <div class="container" id="booking-details-container">
+      <div style="text-align: center; padding: 4rem;"><div class="spinner"></div><p style="color: var(--text-secondary); margin-top: 1rem;">Loading booking details...</p></div>
+    </div>
+  </main>
+
+  <!-- CONDITION REPORT FILE MODAL -->
+  <div class="modal-overlay" id="report-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;" id="modal-report-title">File Condition Inspection Report</h3>
+        <button class="modal-close" onclick="closeReportModal()">&times;</button>
+      </div>
+      <form id="condition-report-form" onsubmit="handleFileConditionReport(event)">
+        <input type="hidden" id="report-stage">
+        
+        <div class="form-group">
+          <label class="form-label">Condition Inspection Notes *</label>
+          <textarea id="report-notes" class="form-control" rows="3" placeholder="Describe current physical & functional state of gear (scratches, cables, lens glass clarity)..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pre-existing Damage or Wear Notes</label>
+          <textarea id="report-damage" class="form-control" rows="2" placeholder="Note any existing scratches or cosmetic blemishes prior to handover..."></textarea>
+        </div>
+
+        <button type="submit" id="save-report-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">Confirm Inspection Report</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- LEAVE REVIEW MODAL -->
+  <div class="modal-overlay" id="review-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">Leave Equipment & Owner Review</h3>
+        <button class="modal-close" onclick="closeReviewModal()">&times;</button>
+      </div>
+      <form id="review-form" onsubmit="handlePostReview(event)">
+        <div class="form-group">
+          <label class="form-label">Star Rating (1 to 5 Stars) *</label>
+          <select id="review-rating" class="form-control" required>
+            <option value="5">⭐⭐⭐⭐⭐ 5 Stars - Exceptional</option>
+            <option value="4">⭐⭐⭐⭐ 4 Stars - Very Good</option>
+            <option value="3">⭐⭐⭐ 3 Stars - Average</option>
+            <option value="2">⭐⭐ 2 Stars - Below Expectations</option>
+            <option value="1">⭐ 1 Star - Poor</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Written Feedback</label>
+          <textarea id="review-comment" class="form-control" rows="3" placeholder="Share your experience renting this gear..."></textarea>
+        </div>
+
+        <button type="submit" id="save-review-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">Submit Review</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+      <span>&copy; 2026 BorrowBox Inc. All rights reserved.</span>
+      <span>Rent Smart. Own Less.</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    let currentBooking = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      if (!id) {
+        window.location.href = 'renter-dashboard.html';
+        return;
+      }
+      loadBooking(id);
+    });
+
+    async function loadBooking(id) {
+      const container = document.getElementById('booking-details-container');
+      try {
+        currentBooking = await ApiClient.get(`/bookings/${id}`);
+        const reports = await ApiClient.get(`/bookings/${id}/condition-reports`).catch(() => []);
+        
+        const currentUser = Auth.getUser();
+        const isRenter = currentUser.id === currentBooking.renter.id;
+        const isOwner = currentUser.id === currentBooking.owner.id;
+
+        const beforeHandover = reports.find(r => r.inspectionStage === 'BEFORE_HANDOVER');
+        const afterReturn = reports.find(r => r.inspectionStage === 'AFTER_RETURN');
+
+        container.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <h1 style="font-size: 2.2rem; font-family: monospace;">${currentBooking.bookingReference}</h1>
+                ${UI.renderStatusBadge(currentBooking.bookingStatus)}
+              </div>
+              <p style="color: var(--text-secondary);">Created on ${UI.formatDate(currentBooking.createdAt)}</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              ${(currentBooking.bookingStatus === 'PENDING' || currentBooking.bookingStatus === 'APPROVED') ? `
+                <button class="btn btn-danger btn-sm" onclick="cancelBooking(${currentBooking.id})">Cancel Booking</button>
+              ` : ''}
+              ${(currentBooking.bookingStatus === 'COMPLETED' && isRenter) ? `
+                <button class="btn btn-primary btn-sm" onclick="openReviewModal()">Write Review</button>
+              ` : ''}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+            <div>
+              <!-- EQUIPMENT SUMMARY CARD -->
+              <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">Rented Equipment</h3>
+                <div style="display: flex; gap: 1.25rem; align-items: center;">
+                  <img src="${currentBooking.equipment.primaryImageUrl || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=200&q=80'}" style="width: 100px; height: 75px; border-radius: var(--radius-md); object-fit: cover;" alt="${currentBooking.equipment.name}">
+                  <div>
+                    <h4 style="font-size: 1.1rem; margin-bottom: 0.25rem;"><a href="equipment-details.html?id=${currentBooking.equipment.id}">${currentBooking.equipment.name}</a></h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">${currentBooking.equipment.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CONDITION REPORTS COMPARISON -->
+              <div class="card" style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                  <h3 style="font-size: 1.15rem;">Equipment Condition Inspection Reports</h3>
+                  <div style="display: flex; gap: 0.5rem;">
+                    ${!beforeHandover ? `<button class="btn btn-secondary btn-sm" onclick="openReportModal('BEFORE_HANDOVER')">+ File Handover Report</button>` : ''}
+                    ${(currentBooking.bookingStatus === 'ACTIVE' || currentBooking.bookingStatus === 'RETURN_REQUESTED') && !afterReturn ? `<button class="btn btn-secondary btn-sm" onclick="openReportModal('AFTER_RETURN')">+ File Return Report</button>` : ''}
+                  </div>
+                </div>
+
+                <div class="condition-comparison-grid">
+                  <!-- Before Handover Card -->
+                  <div class="inspection-card">
+                    <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--primary);">BEFORE HANDOVER</div>
+                    ${beforeHandover ? `
+                      <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.5rem;">${beforeHandover.conditionNotes}</p>
+                      ${beforeHandover.damageNotes ? `<div style="font-size: 0.8rem; color: var(--danger);">Damage/Notes: ${beforeHandover.damageNotes}</div>` : ''}
+                      <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.5rem;">Reported by ${beforeHandover.reporter.fullName} on ${UI.formatDate(beforeHandover.createdAt)}</div>
+                    ` : `
+                      <p style="color: var(--text-tertiary); font-size: 0.85rem;">No handover condition report filed yet.</p>
+                    `}
+                  </div>
+
+                  <!-- After Return Card -->
+                  <div class="inspection-card">
+                    <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--success);">AFTER RETURN</div>
+                    ${afterReturn ? `
+                      <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.5rem;">${afterReturn.conditionNotes}</p>
+                      ${afterReturn.damageNotes ? `<div style="font-size: 0.8rem; color: var(--danger);">Damage/Notes: ${afterReturn.damageNotes}</div>` : ''}
+                      <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.5rem;">Reported by ${afterReturn.reporter.fullName} on ${UI.formatDate(afterReturn.createdAt)}</div>
+                    ` : `
+                      <p style="color: var(--text-tertiary); font-size: 0.85rem;">No return condition report filed yet.</p>
+                    `}
+                  </div>
+                </div>
+              </div>
+
+              <!-- TIMELINE HISTORY -->
+              <div class="card">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Booking Status Audit History</h3>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  ${currentBooking.history && currentBooking.history.length > 0 ? currentBooking.history.map(h => `
+                    <div style="display: flex; gap: 1rem; align-items: flex-start; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                      <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary); margin-top: 0.4rem;"></div>
+                      <div>
+                        <div style="font-weight: 700; font-size: 0.9rem;">Transitioned to ${h.newStatus}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${h.notes || ''} &bull; by ${h.changedBy ? h.changedBy.fullName : 'System'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-tertiary);">${UI.formatDate(h.createdAt)}</div>
+                      </div>
+                    </div>
+                  `).join('') : '<p style="color: var(--text-secondary);">No history log recorded.</p>'}
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: FINANCIALS & CONTACT CARDS -->
+            <div>
+              <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">Rental Pricing Summary</h3>
+                <div class="price-breakdown" style="margin: 0; padding: 0; border: none;">
+                  <div class="price-row">
+                    <span>Daily Rate</span>
+                    <span>${UI.formatCurrency(currentBooking.dailyPriceSnapshot)}</span>
+                  </div>
+                  <div class="price-row">
+                    <span>Rental Days</span>
+                    <span>${currentBooking.rentalDays} days</span>
+                  </div>
+                  <div class="price-row">
+                    <span>Subtotal</span>
+                    <span>${UI.formatCurrency(currentBooking.rentalSubtotal)}</span>
+                  </div>
+                  <div class="price-row">
+                    <span>Service Fee</span>
+                    <span>${UI.formatCurrency(currentBooking.additionalFees)}</span>
+                  </div>
+                  <div class="price-row">
+                    <span>Refundable Deposit</span>
+                    <span>${UI.formatCurrency(currentBooking.depositAmount)}</span>
+                  </div>
+                  <div class="price-row total">
+                    <span>Total Paid</span>
+                    <span>${UI.formatCurrency(currentBooking.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CONTACT CARDS -->
+              <div class="card">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">Parties Contact Info</h3>
+                <div style="margin-bottom: 1rem;">
+                  <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary);">RENTER</div>
+                  <div style="font-weight: 600; font-size: 0.95rem;">${currentBooking.renter.fullName}</div>
+                  <div style="font-size: 0.85rem; color: var(--text-secondary);">${currentBooking.renter.email}</div>
+                </div>
+
+                <div>
+                  <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary);">OWNER</div>
+                  <div style="font-weight: 600; font-size: 0.95rem;">${currentBooking.owner.fullName}</div>
+                  <div style="font-size: 0.85rem; color: var(--text-secondary);">${currentBooking.owner.email}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 4rem;">Failed to load booking details: ${e.message}</div>`;
+      }
+    }
+
+    function openReportModal(stage) {
+      document.getElementById('report-stage').value = stage;
+      document.getElementById('modal-report-title').textContent = `File ${stage === 'BEFORE_HANDOVER' ? 'Handover' : 'Return'} Inspection Report`;
+      document.getElementById('report-modal').classList.add('show');
+    }
+    function closeReportModal() { document.getElementById('report-modal').classList.remove('show'); }
+
+    function openReviewModal() { document.getElementById('review-modal').classList.add('show'); }
+    function closeReviewModal() { document.getElementById('review-modal').classList.remove('show'); }
+
+    async function handleFileConditionReport(e) {
+      e.preventDefault();
+      const stage = document.getElementById('report-stage').value;
+      const notes = document.getElementById('report-notes').value.trim();
+      const damage = document.getElementById('report-damage').value.trim();
+
+      try {
+        await ApiClient.post(`/bookings/${currentBooking.id}/condition-reports`, {
+          inspectionStage: stage,
+          conditionNotes: notes,
+          damageNotes: damage
+        });
+
+        UI.showToast('Condition report filed successfully!', 'success');
+        closeReportModal();
+        loadBooking(currentBooking.id);
+      } catch (err) {
+        UI.showToast(err.message || 'Failed to file report', 'error');
+      }
+    }
+
+    async function handlePostReview(e) {
+      e.preventDefault();
+      const rating = parseInt(document.getElementById('review-rating').value);
+      const comment = document.getElementById('review-comment').value.trim();
+
+      try {
+        await ApiClient.post(`/reviews/booking/${currentBooking.id}`, { rating, comment });
+        UI.showToast('Review posted successfully! Thank you for rating.', 'success');
+        closeReviewModal();
+        loadBooking(currentBooking.id);
+      } catch (err) {
+        UI.showToast(err.message || 'Failed to post review', 'error');
+      }
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm('Are you sure you want to cancel this booking?')) return;
+      try {
+        await ApiClient.post(`/bookings/${id}/cancel`, { reason: 'Cancelled by user from details page' });
+        UI.showToast('Booking cancelled.', 'info');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to cancel booking', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
