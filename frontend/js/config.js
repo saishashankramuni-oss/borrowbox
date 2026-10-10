@@ -11,7 +11,6 @@ if (typeof window !== 'undefined' && window.location && window.location.search) 
     if (backendParam && backendParam.startsWith('http')) {
       const cleanParam = backendParam.replace(/\/+$/, '');
       localStorage.setItem('BORROWBOX_BACKEND_URL', cleanParam);
-      // Clean query parameter from URL without reload
       const newUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, document.title, newUrl);
     }
@@ -21,8 +20,8 @@ if (typeof window !== 'undefined' && window.location && window.location.search) 
 }
 
 const BORROWBOX_CONFIG = {
-  // Configured backend URL (from window global, localStorage, or hardcoded for direct domain deployment)
-  BACKEND_URL: (typeof window !== 'undefined' && (window.BORROWBOX_BACKEND_URL || localStorage.getItem('BORROWBOX_BACKEND_URL'))) || '',
+  // Configured backend URL (defaults to active Render backend service)
+  BACKEND_URL: (typeof window !== 'undefined' && (window.BORROWBOX_BACKEND_URL || localStorage.getItem('BORROWBOX_BACKEND_URL'))) || 'https://borrowbox-1-me57.onrender.com',
 
   /**
    * Set and persist the backend URL (e.g. from browser console or settings)
@@ -35,9 +34,9 @@ const BORROWBOX_CONFIG = {
       localStorage.setItem('BORROWBOX_BACKEND_URL', clean);
       console.log('[BorrowBox] Backend URL configured to:', clean);
     } else {
-      this.BACKEND_URL = '';
+      this.BACKEND_URL = 'https://borrowbox-1-me57.onrender.com';
       localStorage.removeItem('BORROWBOX_BACKEND_URL');
-      console.log('[BorrowBox] Backend URL reset to automatic detection');
+      console.log('[BorrowBox] Backend URL reset to default');
     }
   },
 
@@ -45,26 +44,27 @@ const BORROWBOX_CONFIG = {
    * Determine the API base URL based on runtime environment
    */
   getApiBaseUrl() {
-    // 1. Explicitly configured backend URL (takes precedence for multi-origin deployments)
+    // 1. Local dev server (Live Server on port 5500, etc.)
+    if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      if (window.location.port !== '8080') {
+        return 'http://localhost:8080/api/v1';
+      }
+      return `${window.location.origin}/api/v1`;
+    }
+
+    // 2. Explicitly configured backend URL
     if (this.BACKEND_URL && this.BACKEND_URL.trim() !== '') {
       const base = this.BACKEND_URL.replace(/\/+$/, '');
       return `${base}/api/v1`;
     }
 
-    // 2. Local dev server (Live Server on port 5500, etc.)
-    if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      if (window.location.port !== '8080') {
-        return 'http://localhost:8080/api/v1';
-      }
-    }
-
-    // 3. Deployed site with relative path (Single Spring Boot app or Netlify proxy)
+    // 3. Deployed site with relative path (Single Spring Boot app)
     if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
       return `${window.location.origin}/api/v1`;
     }
 
     // 4. Default fallback
-    return 'http://localhost:8080/api/v1';
+    return 'https://borrowbox-1-me57.onrender.com/api/v1';
   },
 
   /**

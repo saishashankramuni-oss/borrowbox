@@ -16,30 +16,29 @@
   [headers.values]
     Cache-Control = "public, max-age=3600, must-revalidate"
 
-# Proxy REST API requests to Render backend
-# Note: Update the target URL to match your Render backend service URL
+# Proxy REST API requests to active Render backend
 [[redirects]]
   from = "/api/*"
-  to = "https://your-service.onrender.com/api/:splat"
+  to = "https://borrowbox-1-me57.onrender.com/api/:splat"
   status = 200
   force = true
 
-# Proxy uploaded equipment images to backend storage
+# Proxy uploaded equipment images to active backend storage
 [[redirects]]
   from = "/uploads/*"
-  to = "https://your-service.onrender.com/uploads/:splat"
+  to = "https://borrowbox-1-me57.onrender.com/uploads/:splat"
   status = 200
   force = true
 
 # Proxy backend health checks
 [[redirects]]
   from = "/health"
-  to = "https://your-service.onrender.com/health"
+  to = "https://borrowbox-1-me57.onrender.com/health"
   status = 200
   force = true
 
 [[redirects]]
   from = "/actuator/*"
-  to = "https://your-service.onrender.com/actuator/:splat"
+  to = "https://borrowbox-1-me57.onrender.com/actuator/:splat"
   status = 200
   force = true
