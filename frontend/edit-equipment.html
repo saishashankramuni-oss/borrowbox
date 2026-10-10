@@ -108,6 +108,16 @@
           <textarea id="rentalTerms" class="form-control" rows="2"></textarea>
         </div>
 
+        <h3 style="font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin: 2rem 0 1.5rem;">Equipment Photos</h3>
+
+        <div class="form-group">
+          <label class="form-label">Upload Additional Photos</label>
+          <input type="file" id="image-file-input" class="form-control" accept="image/*" onchange="handleImageUpload(event)">
+          <div id="image-upload-status" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Upload clear photos of your equipment from multiple angles</div>
+        </div>
+
+        <div id="uploaded-images-preview" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem;"></div>
+
         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
           <button type="submit" id="save-listing-btn" class="btn btn-primary btn-lg" style="flex: 1;">Save Changes</button>
           <a href="owner-dashboard.html" class="btn btn-secondary btn-lg">Cancel</a>
@@ -130,6 +140,7 @@
   <script src="js/navbar.js"></script>
   <script>
     let equipmentId = null;
+    const uploadedImageUrls = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
       if (!Auth.requireAuth()) return;
@@ -158,6 +169,42 @@
       } catch (e) {}
     }
 
+    async function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('image-upload-status');
+      statusEl.textContent = 'Uploading photo...';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const filePath = await ApiClient.post('/equipment/upload-image', formData);
+        uploadedImageUrls.push(filePath);
+        statusEl.textContent = 'Photo uploaded successfully!';
+        renderUploadedPreviews();
+      } catch (err) {
+        statusEl.textContent = 'Upload failed: ' + err.message;
+        statusEl.style.color = 'var(--danger)';
+      }
+    }
+
+    function renderUploadedPreviews() {
+      const container = document.getElementById('uploaded-images-preview');
+      container.innerHTML = uploadedImageUrls.map((url, idx) => `
+        <div style="position: relative; width: 90px; height: 70px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);">
+          <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+          <button type="button" onclick="removeUploadedImage(${idx})" style="position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removeUploadedImage(idx) {
+      uploadedImageUrls.splice(idx, 1);
+      renderUploadedPreviews();
+    }
+
     async function loadListingData(id) {
       try {
         const eq = await ApiClient.get(`/equipment/${id}`);
@@ -176,6 +223,12 @@
         document.getElementById('rentalInstructions').value = eq.rentalInstructions || '';
         document.getElementById('rentalTerms').value = eq.rentalTerms || '';
         document.getElementById('status').value = eq.status;
+
+        if (eq.images && eq.images.length > 0) {
+          uploadedImageUrls.length = 0;
+          eq.images.forEach(img => uploadedImageUrls.push(img.filePath));
+          renderUploadedPreviews();
+        }
 
       } catch (e) {
         UI.showToast('Failed to load listing: ' + e.message, 'error');
@@ -203,7 +256,8 @@
         location: document.getElementById('location').value.trim(),
         rentalInstructions: document.getElementById('rentalInstructions').value.trim(),
         rentalTerms: document.getElementById('rentalTerms').value.trim(),
-        status: document.getElementById('status').value
+        status: document.getElementById('status').value,
+        imageUrls: uploadedImageUrls
       };
 
       try {

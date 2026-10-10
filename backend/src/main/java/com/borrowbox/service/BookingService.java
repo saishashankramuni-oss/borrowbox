@@ -32,7 +32,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
 public class BookingService {
 
     private final BookingRepository bookingRepository;
@@ -456,7 +455,7 @@ public class BookingService {
                         .id(b.getEquipment().getId())
                         .name(b.getEquipment().getName())
                         .location(b.getEquipment().getLocation())
-                        .primaryImageUrl(!b.getEquipment().getImages().isEmpty() ? b.getEquipment().getImages().get(0).getFilePath() : "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80")
+                        .primaryImageUrl(b.getEquipment().getImages() != null && !b.getEquipment().getImages().isEmpty() ? b.getEquipment().getImages().get(0).getFilePath() : "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80")
                         .dailyPrice(b.getEquipment().getDailyPrice())
                         .securityDeposit(b.getEquipment().getSecurityDeposit())
                         .build())

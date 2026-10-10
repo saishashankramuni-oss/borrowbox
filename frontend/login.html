@@ -18,16 +18,6 @@
         <p style="color: var(--text-secondary); font-size: 0.95rem;">Log in to manage your rentals and equipment listings</p>
       </div>
 
-      <!-- DEMO ACCOUNTS QUICK PRESET BAR -->
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
-        <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.6rem;">Quick Demo Accounts:</div>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('alex.renter@borrowbox.com')">Renter</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('rahul.owner@borrowbox.com')">Owner</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoAccount('admin@borrowbox.com')">Admin</button>
-        </div>
-      </div>
-
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="form-group">
           <label class="form-label">Email Address</label>
@@ -37,7 +27,7 @@
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <label class="form-label">Password</label>
-            <a href="#" style="font-size: 0.8rem;" onclick="UI.showToast('Demo Mode: Use Password123!', 'info')">Forgot password?</a>
+            <a href="#" style="font-size: 0.8rem;" onclick="UI.showToast('Please contact your administrator or support to reset your password.', 'info')">Forgot password?</a>
           </div>
           <div style="position: relative;">
             <input type="password" id="password" class="form-control" placeholder="••••••••" required>
@@ -62,11 +52,6 @@
   <script src="js/ui.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    function fillDemoAccount(email) {
-      document.getElementById('email').value = email;
-      document.getElementById('password').value = 'Password123!';
-    }
-
     function togglePasswordVisibility(fieldId) {
       const input = document.getElementById(fieldId);
       input.type = input.type === 'password' ? 'text' : 'password';
@@ -87,7 +72,13 @@
         UI.showToast(`Welcome back, ${response.user.fullName}!`, 'success');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const redirect = urlParams.get('redirect') || (response.user.role === 'ROLE_ADMIN' ? 'admin-dashboard.html' : 'renter-dashboard.html');
+        let defaultRedirect = 'renter-dashboard.html';
+        if (response.user.role === 'ROLE_ADMIN') {
+          defaultRedirect = 'admin-dashboard.html';
+        } else if (response.user.role === 'ROLE_OWNER') {
+          defaultRedirect = 'owner-dashboard.html';
+        }
+        const redirect = urlParams.get('redirect') || defaultRedirect;
         
         setTimeout(() => {
           window.location.href = redirect;

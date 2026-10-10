@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
 public class ConditionReportService {
 
     private final ConditionReportRepository reportRepository;
@@ -119,9 +118,9 @@ public class ConditionReportService {
     }
 
     public ConditionReportDto mapToDto(ConditionReport report) {
-        List<String> imagePaths = report.getImages().stream()
+        List<String> imagePaths = report.getImages() != null ? report.getImages().stream()
                 .map(ConditionReportImage::getFilePath)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()) : java.util.Collections.emptyList();
 
         return ConditionReportDto.builder()
                 .id(report.getId())

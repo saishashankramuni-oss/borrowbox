@@ -23,7 +23,12 @@ class Auth {
     localStorage.setItem('borrowbox_user', JSON.stringify(user));
   }
 
-  static logout() {
+  static async logout() {
+    try {
+      await ApiClient.post('/auth/logout', {});
+    } catch (e) {
+      // Ignore network errors during logout
+    }
     localStorage.removeItem('borrowbox_token');
     localStorage.removeItem('borrowbox_user');
     window.location.href = 'index.html';

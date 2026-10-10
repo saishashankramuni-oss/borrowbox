@@ -8,10 +8,10 @@ import com.borrowbox.entity.Equipment;
 import com.borrowbox.entity.EquipmentImage;
 import com.borrowbox.entity.User;
 import com.borrowbox.entity.enums.EquipmentStatus;
+import com.borrowbox.entity.enums.Role;
 import com.borrowbox.exception.ResourceNotFoundException;
 import com.borrowbox.exception.UnauthorizedAccessException;
 import com.borrowbox.repository.CategoryRepository;
-import com.borrowbox.repository.EquipmentImageRepository;
 import com.borrowbox.repository.EquipmentRepository;
 import com.borrowbox.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -28,21 +28,18 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
 public class EquipmentService {
 
     private final EquipmentRepository equipmentRepository;
-    private final EquipmentImageRepository equipmentImageRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
     private final CategoryService categoryService;
 
-    public EquipmentService(EquipmentRepository equipmentRepository, EquipmentImageRepository equipmentImageRepository,
+    public EquipmentService(EquipmentRepository equipmentRepository,
             CategoryRepository categoryRepository, UserRepository userRepository, AuthService authService,
             CategoryService categoryService) {
         this.equipmentRepository = equipmentRepository;
-        this.equipmentImageRepository = equipmentImageRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.authService = authService;
@@ -53,6 +50,11 @@ public class EquipmentService {
     public EquipmentDto createEquipment(String ownerEmail, EquipmentCreateRequest request) {
         User owner = userRepository.findByEmail(ownerEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (owner.getRole() == Role.ROLE_RENTER) {
+            owner.setRole(Role.ROLE_OWNER);
+            owner = userRepository.save(owner);
+        }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(
@@ -81,12 +83,9 @@ public class EquipmentService {
                 .reviewCount(0)
                 .build();
 
-        equipment = equipmentRepository.save(equipment);
-
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            List<EquipmentImage> images = new ArrayList<>();
             for (int i = 0; i < request.getImageUrls().size(); i++) {
-                images.add(EquipmentImage.builder()
+                equipment.getImages().add(EquipmentImage.builder()
                         .equipment(equipment)
                         .filePath(request.getImageUrls().get(i))
                         .altText(equipment.getName() + " Image " + (i + 1))
@@ -94,22 +93,19 @@ public class EquipmentService {
                         .isPrimary(i == 0)
                         .build());
             }
-            equipmentImageRepository.saveAll(images);
-            equipment.setImages(images);
         } else {
             // Default placeholder image if none uploaded
-            EquipmentImage defaultImg = EquipmentImage.builder()
+            equipment.getImages().add(EquipmentImage.builder()
                     .equipment(equipment)
                     .filePath(
                             "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80")
                     .altText(equipment.getName())
                     .displayOrder(1)
                     .isPrimary(true)
-                    .build();
-            equipmentImageRepository.save(defaultImg);
-            equipment.setImages(List.of(defaultImg));
+                    .build());
         }
 
+        equipment = equipmentRepository.save(equipment);
         return mapToDto(equipment);
     }
 
@@ -198,7 +194,9 @@ public class EquipmentService {
         equipment.setDescription(request.getDescription().trim());
         equipment.setBrand(request.getBrand() != null ? request.getBrand().trim() : null);
         equipment.setModel(request.getModel() != null ? request.getModel().trim() : null);
-        equipment.setItemCondition(request.getItemCondition());
+        if (request.getItemCondition() != null) {
+            equipment.setItemCondition(request.getItemCondition());
+        }
         equipment.setDailyPrice(request.getDailyPrice());
         equipment.setSecurityDeposit(
                 request.getSecurityDeposit() != null ? request.getSecurityDeposit() : BigDecimal.ZERO);
@@ -209,6 +207,19 @@ public class EquipmentService {
         equipment.setRentalTerms(request.getRentalTerms());
         if (request.getStatus() != null) {
             equipment.setStatus(request.getStatus());
+        }
+
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            equipment.getImages().clear();
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                equipment.getImages().add(EquipmentImage.builder()
+                        .equipment(equipment)
+                        .filePath(request.getImageUrls().get(i))
+                        .altText(equipment.getName() + " Image " + (i + 1))
+                        .displayOrder(i + 1)
+                        .isPrimary(i == 0)
+                        .build());
+            }
         }
 
         equipment = equipmentRepository.save(equipment);
@@ -242,9 +253,10 @@ public class EquipmentService {
 
         String primaryUrl = imageDtos.stream()
                 .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
-                .map(EquipmentDto.EquipmentImageDto::getFilePath)
+                .map(img -> img != null ? img.getFilePath() : null)
+                .filter(url -> url != null)
                 .findFirst()
-                .orElse(!imageDtos.isEmpty() ? imageDtos.get(0).getFilePath()
+                .orElse(!imageDtos.isEmpty() && imageDtos.get(0) != null ? imageDtos.get(0).getFilePath()
                         : "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80");
 
         return EquipmentDto.builder()

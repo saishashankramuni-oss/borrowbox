@@ -28,12 +28,14 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION
-        value: 86400000
+        value: "86400000"
       - key: CORS_ALLOWED_ORIGINS
         sync: false # Set to your deployed Netlify frontend URL: e.g. https://your-borrowbox.netlify.app
       - key: UPLOAD_DIR
         value: /app/uploads
-    disk:
-      name: borrowbox-uploads
-      mountPath: /app/uploads
-      sizeGB: 1
+    # Note: Render Persistent Disks require Starter plan ($7/mo) or above.
+    # To attach a disk, change plan to 'starter' and uncomment the disk section below:
+    # disk:
+    #   name: borrowbox-uploads
+    #   mountPath: /app/uploads
+    #   sizeGB: 1

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@SuppressWarnings("null")
 public class UserService {
 
     private final UserRepository userRepository;
@@ -17,6 +16,13 @@ public class UserService {
     public UserService(UserRepository userRepository, AuthService authService) {
         this.userRepository = userRepository;
         this.authService = authService;
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return authService.mapToUserDto(user);
     }
 
     @Transactional

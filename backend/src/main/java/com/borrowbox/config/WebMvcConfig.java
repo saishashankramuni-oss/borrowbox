@@ -10,7 +10,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -22,28 +21,30 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private String allowedOrigins;
 
     @Override
-    @SuppressWarnings("null")
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        java.util.List<String> originList = new java.util.ArrayList<>();
+        java.util.List<String> exactOrigins = new java.util.ArrayList<>();
+        java.util.List<String> patternOrigins = new java.util.ArrayList<>();
         for (String origin : allowedOrigins.split(",")) {
             String trimmed = origin.trim();
             if (!trimmed.isEmpty()) {
-                originList.add(trimmed);
+                if (trimmed.contains("*")) {
+                    patternOrigins.add(trimmed);
+                } else {
+                    exactOrigins.add(trimmed);
+                }
             }
         }
-        String[] origins = originList.toArray(new String[0]);
-
-        boolean hasWildcard = originList.contains("*");
 
         var corsRegistration = registry.addMapping("/**")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
 
-        if (hasWildcard) {
-            corsRegistration.allowedOriginPatterns("*");
-        } else {
-            corsRegistration.allowedOrigins(origins);
+        if (!exactOrigins.isEmpty()) {
+            corsRegistration.allowedOrigins(exactOrigins.toArray(String[]::new));
+        }
+        if (!patternOrigins.isEmpty()) {
+            corsRegistration.allowedOriginPatterns(patternOrigins.toArray(String[]::new));
         }
     }
 
@@ -55,6 +56,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        try {
+            java.nio.file.Files.createDirectories(uploadPath);
+        } catch (Exception ignored) {
+        }
         String uploadResourceLocation = uploadPath.toUri().toString();
         if (!uploadResourceLocation.endsWith("/")) {
             uploadResourceLocation += "/";
@@ -63,13 +68,19 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadResourceLocation);
 
+        java.util.List<String> staticLocations = new java.util.ArrayList<>();
+        staticLocations.add("classpath:/static/");
+
         Path frontendPath = Paths.get("..", "frontend").toAbsolutePath().normalize();
-        String frontendResourceLocation = frontendPath.toUri().toString();
-        if (!frontendResourceLocation.endsWith("/")) {
-            frontendResourceLocation += "/";
+        if (java.nio.file.Files.exists(frontendPath)) {
+            String frontendResourceLocation = frontendPath.toUri().toString();
+            if (!frontendResourceLocation.endsWith("/")) {
+                frontendResourceLocation += "/";
+            }
+            staticLocations.add(frontendResourceLocation);
         }
 
         registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/", frontendResourceLocation);
+                .addResourceLocations(staticLocations.toArray(String[]::new));
     }
 }

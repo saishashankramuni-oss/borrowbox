@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface EquipmentImageRepository extends JpaRepository<EquipmentImage, Long> {
     List<EquipmentImage> findByEquipmentIdOrderByDisplayOrderAsc(Long equipmentId);
+    void deleteByEquipmentId(Long equipmentId);
 }

@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@SuppressWarnings("null")
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -39,6 +38,10 @@ public class AuthService {
     public AuthResponse register(AuthRequest.Register request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email is already registered in BorrowBox!");
+        }
+
+        if (request.getRole() == Role.ROLE_ADMIN) {
+            throw new BadRequestException("Registration with ADMIN role is not permitted.");
         }
 
         Role userRole = request.getRole() != null ? request.getRole() : Role.ROLE_RENTER;

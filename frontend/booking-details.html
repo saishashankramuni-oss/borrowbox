@@ -119,7 +119,20 @@
               </div>
               <p style="color: var(--text-secondary);">Created on ${UI.formatDate(currentBooking.createdAt)}</p>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              ${(isOwner && currentBooking.bookingStatus === 'PENDING') ? `
+                <button class="btn btn-success btn-sm" onclick="approveBooking(${currentBooking.id})">Approve Request</button>
+                <button class="btn btn-danger btn-sm" onclick="rejectBooking(${currentBooking.id})">Decline Request</button>
+              ` : ''}
+              ${(isOwner && currentBooking.bookingStatus === 'APPROVED') ? `
+                <button class="btn btn-primary btn-sm" onclick="confirmPickup(${currentBooking.id})">Handover Gear</button>
+              ` : ''}
+              ${(isRenter && currentBooking.bookingStatus === 'ACTIVE') ? `
+                <button class="btn btn-primary btn-sm" onclick="requestReturn(${currentBooking.id})">Initiate Return to Owner</button>
+              ` : ''}
+              ${(isOwner && (currentBooking.bookingStatus === 'RETURN_REQUESTED' || currentBooking.bookingStatus === 'ACTIVE')) ? `
+                <button class="btn btn-success btn-sm" onclick="confirmReturn(${currentBooking.id})">Verify & Complete Return</button>
+              ` : ''}
               ${(currentBooking.bookingStatus === 'PENDING' || currentBooking.bookingStatus === 'APPROVED') ? `
                 <button class="btn btn-danger btn-sm" onclick="cancelBooking(${currentBooking.id})">Cancel Booking</button>
               ` : ''}
@@ -307,6 +320,59 @@
         loadBooking(id);
       } catch (e) {
         UI.showToast(e.message || 'Failed to cancel booking', 'error');
+      }
+    }
+
+    async function approveBooking(id) {
+      try {
+        await ApiClient.post(`/bookings/${id}/approve`);
+        UI.showToast('Booking approved successfully!', 'success');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to approve booking', 'error');
+      }
+    }
+
+    async function rejectBooking(id) {
+      const reason = prompt('Reason for declining request:');
+      if (reason === null) return;
+      try {
+        await ApiClient.post(`/bookings/${id}/reject`, { reason });
+        UI.showToast('Booking request declined.', 'info');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to decline booking', 'error');
+      }
+    }
+
+    async function confirmPickup(id) {
+      try {
+        await ApiClient.post(`/bookings/${id}/confirm-pickup`);
+        UI.showToast('Handover confirmed! Rental is now active.', 'success');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to confirm pickup', 'error');
+      }
+    }
+
+    async function requestReturn(id) {
+      if (!confirm('Are you sure you want to initiate return to the owner?')) return;
+      try {
+        await ApiClient.post(`/bookings/${id}/request-return`);
+        UI.showToast('Return request submitted to owner!', 'success');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to submit return request', 'error');
+      }
+    }
+
+    async function confirmReturn(id) {
+      try {
+        await ApiClient.post(`/bookings/${id}/confirm-return`);
+        UI.showToast('Return verified and rental completed successfully!', 'success');
+        loadBooking(id);
+      } catch (e) {
+        UI.showToast(e.message || 'Failed to confirm return', 'error');
       }
     }
   </script>

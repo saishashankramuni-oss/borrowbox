@@ -58,13 +58,30 @@ class ApiClient {
           window.location.href = 'login.html';
           throw new Error('Unauthorized');
         }
-        const errorMsg = data.message || `Request failed with status ${response.status}`;
+        let errorMsg = data.message;
+        if (!errorMsg) {
+          if (response.status === 502 || response.status === 503 || response.status === 504) {
+            errorMsg = `Backend server is unavailable or starting up (HTTP ${response.status}). Please try again shortly.`;
+          } else if (response.status === 403) {
+            errorMsg = 'Access forbidden. You do not have permission to perform this action.';
+          } else if (response.status === 404) {
+            errorMsg = `Requested resource was not found (HTTP 404: ${endpoint}).`;
+          } else {
+            errorMsg = `Request failed with status ${response.status}`;
+          }
+        }
+        if (data.data && typeof data.data === 'object' && Object.values(data.data).length > 0) {
+          errorMsg = Object.values(data.data).join(', ');
+        }
         throw new Error(errorMsg);
       }
 
       return data.data !== undefined ? data.data : data;
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
+      if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('NetworkError'))) {
+        throw new Error(`Unable to connect to BorrowBox API at ${baseUrl}. Please check that the server is online and CORS is configured.`);
+      }
       throw error;
     }
   }

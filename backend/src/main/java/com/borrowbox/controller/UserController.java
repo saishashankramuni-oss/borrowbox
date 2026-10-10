@@ -20,7 +20,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<UserDto>> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(ApiResponse.success(userService.updateProfile(userDetails.getUsername(), null, null, null)));
+        return ResponseEntity.ok(ApiResponse.success(userService.getProfile(userDetails.getUsername())));
     }
 
     @PatchMapping
