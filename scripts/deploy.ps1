@@ -46,7 +46,8 @@ if ($UpdateRenderUrl) {
     $tomlPath = Join-Path $PSScriptRoot "..\netlify.toml"
     if (Test-Path $tomlPath) {
         $tomlContent = [System.IO.File]::ReadAllText($tomlPath)
-        $tomlContent = $tomlContent.Replace('https://borrowbox-backend.onrender.com', $cleanUrl)
+        $tomlContent = $tomlContent -replace 'https://[a-zA-Z0-9.-]+\.onrender\.com', $cleanUrl
+        $tomlContent = $tomlContent.Replace('https://your-service.onrender.com', $cleanUrl)
         [System.IO.File]::WriteAllText($tomlPath, $tomlContent)
         Write-Host "    Updated netlify.toml" -ForegroundColor Gray
     }
@@ -55,7 +56,8 @@ if ($UpdateRenderUrl) {
     $redirectsPath = Join-Path $PSScriptRoot "..\frontend\_redirects"
     if (Test-Path $redirectsPath) {
         $redirectsContent = [System.IO.File]::ReadAllText($redirectsPath)
-        $redirectsContent = $redirectsContent.Replace('https://borrowbox-backend.onrender.com', $cleanUrl)
+        $redirectsContent = $redirectsContent -replace 'https://[a-zA-Z0-9.-]+\.onrender\.com', $cleanUrl
+        $redirectsContent = $redirectsContent.Replace('https://your-service.onrender.com', $cleanUrl)
         [System.IO.File]::WriteAllText($redirectsPath, $redirectsContent)
         Write-Host "    Updated frontend/_redirects" -ForegroundColor Gray
     }
@@ -64,7 +66,8 @@ if ($UpdateRenderUrl) {
     $staticRedirectsPath = Join-Path $PSScriptRoot "..\backend\src\main\resources\static\_redirects"
     if (Test-Path $staticRedirectsPath) {
         $staticRedirectsContent = [System.IO.File]::ReadAllText($staticRedirectsPath)
-        $staticRedirectsContent = $staticRedirectsContent.Replace('https://borrowbox-backend.onrender.com', $cleanUrl)
+        $staticRedirectsContent = $staticRedirectsContent -replace 'https://[a-zA-Z0-9.-]+\.onrender\.com', $cleanUrl
+        $staticRedirectsContent = $staticRedirectsContent.Replace('https://your-service.onrender.com', $cleanUrl)
         [System.IO.File]::WriteAllText($staticRedirectsPath, $staticRedirectsContent)
         Write-Host "    Updated static/_redirects" -ForegroundColor Gray
     }
